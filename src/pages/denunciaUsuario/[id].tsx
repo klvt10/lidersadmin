@@ -33,6 +33,12 @@ interface ReportedUser {
   login: string;
   userType: string;
   deviceType: string;
+  createdAtFormatted: string;
+}
+
+interface Reports {
+  id: string;
+  reason: string;
 }
 
 type User = ReportedUser;
@@ -42,6 +48,7 @@ export default function DenunciaUsuario () {
   const { query } = useRouter();
 
   const [report, setReport] = useState<Report>();
+  const [reports, setReports] = useState<Reports[]>([]);
   const [reportedUser, setReportedUser] = useState<ReportedUser>();
   const [user, setUser] = useState<User>();
 
@@ -59,20 +66,15 @@ export default function DenunciaUsuario () {
     async function loadReport() {
       try {
         const { data } = await Api.get<Report>(`UserReport/${id}`)
-
-        const report = {
-          id: data.id,
-          reason: data.reason,
-          userId: data.userId,
-          reportedUserId: data.reportedUserId,
-        };
-
-        setReport(report);
+        setReport(data);
       } catch (error) {
         //
       }
     }
-    loadReport();
+    
+    if(id) {
+      loadReport();
+    }    
   }, [query]);
 
   useEffect(() => {
@@ -83,30 +85,27 @@ export default function DenunciaUsuario () {
       try {
         const { data } = await Api.get<ReportedUser>(`Users/${reportedUserId}`)
 
-        const reportedUser = {
-          id: data.id,
-          thumbnailUrl: data.thumbnailUrl,
-          name: data.name,
-          email: data.email,
-          document: data.document,
-          isAdmin: data.isAdmin,
-          createdAt: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
-          areaCode: data.areaCode,
-          phoneNumber: data.phoneNumber,
-          clientId: data.clientId,
-          provider: data.provider,
-          gender: data.gender,
-          login: data.login,
-          userType: data.userType,
-          deviceType: data.deviceType
-        };
-
-        setReportedUser(reportedUser);
+        setReportedUser({
+          ...data,
+          createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
+        });
       }catch (error) {
         //
       }
     }
+
+    async function loadReports() {
+      try {
+        const { data } = await Api.get<Reports[]>(`Users/${report.reportedUserId}/Reports`);
+        
+        setReports(data.filter((item) => item.id !== report.id));
+      } catch (error) {
+        // alert('Erro ao executar. Tente novamente.');
+      }
+    }
+
     if (report) {
+      loadReports();
       loadReportedUser();
     }
   }, [report]);
@@ -119,25 +118,10 @@ export default function DenunciaUsuario () {
       try {
         const { data } = await Api.get<ReportedUser>(`Users/${userId}`)
 
-        const user = {
-          id: data.id,
-          name: data.name,
-          thumbnailUrl: data.thumbnailUrl,
-          email: data.email,
-          document: data.document,
-          isAdmin: data.isAdmin,
-          createdAt: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
-          areaCode: data.areaCode,
-          phoneNumber: data.phoneNumber,
-          clientId: data.clientId,
-          provider: data.provider,
-          gender: data.gender,
-          login: data.login,
-          userType: data.userType,
-          deviceType: data.deviceType
-        };
-
-        setUser(user);
+        setUser({
+          ...data,
+          createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
+        });
       }catch (error) {
         //
       }
@@ -180,8 +164,10 @@ export default function DenunciaUsuario () {
           )}
             <OthersReports>
               <span>Outras Denúncias ao Usuário</span>
-              <p>Inconveniente, fake</p>
-              <p>Inconveniente, fake</p>
+              {reports.length === 0 && <p>Sem denúncias</p>}
+              {reports.map((item) => (
+                <p key={item.id}>{item.reason}</p>
+              ))}
             </OthersReports>
             <ButtonsSection>
             {!reportedUser ? <label>...</label> : (

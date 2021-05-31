@@ -92,14 +92,14 @@ export default function Home() {
     <>
       <Header />
       <Container>
-        <Search>
+        {/* <Search>
           <input
             type="text"
             placeholder="Pesquisar"
             value={search}
             onChange={event => setSearch(event.target.value)}
           />
-        </Search>
+        </Search> */}
           <Reports>
             <li>
               <span className="thumb">Thumb</span>

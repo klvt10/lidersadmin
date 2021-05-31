@@ -49,9 +49,10 @@ export default function Post() {
 
   const [post, setPost] = useState<Post>();
   const [comments, setComments] = useState<Comment[]>([]);
+  const [idToRemove, setIdToRemove] = useState<string>();
   const [reports, setReports] = useState<Report[]>([]);
   const [openedModal, setOpenedModal] = useState<
-    'delete' | 'block' | 'unblock' | null
+    'delete' | 'block' | 'unblock' | 'deleteComment' | null
   >(null);
 
   async function loadPost() {
@@ -69,20 +70,20 @@ export default function Post() {
     }
   }
 
-  useEffect(() => {
+  async function loadComments() {
     const { id } = query;
 
-    console.log(query)
+    try {
+      const { data } = await Api.get<Comment[]>(`Posts/${id}/Comments`);
 
-    async function loadComments() {
-      try {
-        const { data } = await Api.get<Comment[]>(`Posts/${id}/Comments`);
-
-        setComments(data);
-      } catch (error) {
-        // alert('Erro ao executar. Tente novamente.');
-      }
+      setComments(data);
+    } catch (error) {
+      // alert('Erro ao executar. Tente novamente.');
     }
+  }
+
+  useEffect(() => {
+    const { id } = query;
 
     async function loadReports() {
       try {
@@ -139,6 +140,24 @@ export default function Post() {
       setOpenedModal(null);
     }
   }
+
+  async function handleRemoveComment() {
+    try {
+
+      if (!idToRemove) {
+        return;
+      }
+
+      await Api.delete(`Posts/${idToRemove}/RemoveComment`);
+      
+      setComments(state => state.filter(item => item.id !== idToRemove))
+      
+    } catch (e) {
+      alert('Falha ao remover o comentário. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
+    }
+  }
   
   return (
     <>
@@ -162,6 +181,13 @@ export default function Post() {
         title="Desbloquear post"
         onClose={() => setOpenedModal(null)}
         onConfirm={handleUnblockPost}
+      />
+      <ConfirmationModal
+        isOpen={openedModal === 'deleteComment'}
+        message="Tem certeza que deseja excluir esse comentário?"
+        title="Excluir comentário"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleRemoveComment}
       />
       <Header />
       {!post ? <label>Carregando...</label> : (
@@ -214,9 +240,15 @@ export default function Post() {
             {comments.map((comment) => (
               <Comments key={comment.id}>
                 <span>{comment.description}</span>
-                <a href="">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setOpenedModal('deleteComment')
+                    setIdToRemove(comment.id)
+                  }}
+                >
                   <img src="/delete.svg" alt="Excluir comentário" />
-                </a>
+                </button>
               </Comments>
             ))}
           </Card>
