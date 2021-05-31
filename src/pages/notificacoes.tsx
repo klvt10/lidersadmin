@@ -1,40 +1,78 @@
-import Header from '@/components/Header';
-import { Container, Search, Notifications } from '@/styles/pages/Notifications';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { format, parseISO } from "date-fns";
+import ptBR from 'date-fns/locale/pt-BR';
 
-// Novas denúncias
-// Novas assinaturas
-// Novas solicitações de resgate
+import { Api } from '@/services/Api';
+import Header from '@/components/Header';
+
+import { Container, Search, Notifications } from '@/styles/pages/Notifications';
+
+interface Notification {
+  text: string;
+  read: boolean;
+  id: string;
+  createdAt: string;
+  createdAtFormatted: string;
+}
+
+interface NotificationResponse {
+  data: Notification[],
+  count: number;
+  totalPages: number;
+  perPage: number;
+  page: number;
+  total: number;
+}
 
 export default function Home() {
   const [search, setSearch] = useState('');
 
-  const notifications = [
-    {
-      Text: 'Uma nova assinatura foi realizada pelo usuario João das Neves',
-      Date: '01/02/2021',
-      Read: true,
-    },
-    {
-      Text: 'O usuário Malcon Xis teve uma postagem reportada pelo usuário Chris',
-      Date: '01/02/2021',
-      Read: false,
-    },
-    {
-      Text: 'O usuário Jullius está solicitando um novo resgate no valor de R$500,00',
-      Date: '01/02/2021',
-      Read: false,
-    },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await Api.get<NotificationResponse>('AdminNotification', {
+          params: {
+            perPage: 50,
+            page: 1,
+          },
+        });
+
+        setNotifications(data.data.map(item => ({
+          ...item,
+          createdAtFormatted: item.createdAt ? format(parseISO(item.createdAt), 'dd/MM/y', { locale: ptBR }) : ''
+        })));
+      } catch (e) {
+        //
+      }
+    }
+
+    load();
+  })
 
   const filteredNotifications = useMemo(
     () => notifications.filter(u => 
       search.length === 0
-      || u.Text.toLowerCase().includes(search.toLowerCase())
-      || u.Date.toLowerCase().includes(search.toLowerCase())
+      || u.text.toLowerCase().includes(search.toLowerCase())
+      || u.createdAtFormatted.toLowerCase().includes(search.toLowerCase())
     ),
     [notifications],
   );
+
+  async function handleReadNotification (id: string, index: number) {
+    try {
+      await Api.get(`AdminNotification/${id}/Read`);
+
+      const newList = [...notifications];
+
+      newList[index].read = true;
+
+      setNotifications(newList);
+    } catch (e) {
+      //
+    }
+  }
 
   return (
     <>
@@ -50,18 +88,21 @@ export default function Home() {
         </Search>
         <Notifications>
           {filteredNotifications.map((notification, idx) => (
-            <li key={idx.toString()}>
+            <li key={notification.id.toString()}>
               <section>
-                <span className="date">{notification.Date}</span>
+                <span className="date">{notification.createdAtFormatted}</span>
                 <span className="read">{
-                  notification.Read ? 'lida' : (
-                    <button type="button">
+                  notification.read ? 'lida' : (
+                    <button
+                      type="button"
+                      onClick={() => handleReadNotification(notification.id, idx)}
+                    >
                       marcar como lida
                     </button>
                   )
                 }</span>
               </section>
-              <span className="content">{notification.Text}</span>
+              <span className="content">{notification.text}</span>
             </li>
           ))}
         </Notifications>

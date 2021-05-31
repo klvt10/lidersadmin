@@ -55,7 +55,7 @@ export const Posts = styled.ul`
       img {
         height: 40px;
         width: 40px;
-        object-fit: contain;
+        object-fit: cover;
         border-radius: 50%;
       }
     }

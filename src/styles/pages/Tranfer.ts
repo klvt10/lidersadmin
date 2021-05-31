@@ -1,26 +1,36 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  margin: auto;
-  height: calc(100vh - 64px);
-  max-height: calc(100vh - 64px);
-  max-width: 900px;
-`;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 0 2rem;
 
-export const Search = styled.div`
+  p {
+    text-align: center;
+    margin: 2rem;
+  }
+`
+
+export const TransferDetailContainer = styled.section`
   display: flex;
-  justify-content: flex-end;
-  height: 40px;
+  padding: 0 3rem;
 
-  input {
-    width: 300px;
-    border: none;
-    border-bottom: 1px solid var(--white-disable);
-    outline: none;
+  ul {
+    flex: 1;
+    list-style: none;
+    
+    li {
+      text-align: left;
+    }
   }
 `;
 
-export const Users = styled.ul`
+export const FinanceSection = styled.div`
+  display: flex;
+  justify-content: space-around;
+`
+
+export const Rescues = styled.ul`
   padding-top: 20px;
   max-height: calc(100% - 60px);
   overflow-y: auto;
@@ -30,7 +40,7 @@ export const Users = styled.ul`
     font-size: 0.9rem;
     display: grid;
     align-items: center;
-    grid-template-columns: 2fr 2fr 3fr 2fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 2fr 1fr 2fr 2fr 3fr 1fr;
     padding: 5px 0;
     border-bottom: 1px solid var(--white-disable);
 
@@ -43,10 +53,6 @@ export const Users = styled.ul`
           height: 16px;
         }
       }
-
-      overflow-x: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     &:first-child {
@@ -55,7 +61,7 @@ export const Users = styled.ul`
       padding: 8px 0;
     }
 
-    span.type, span.active, span.date, span.edit {
+    span.value, span.request, span.transfer {
       text-align: center;
     }
   }

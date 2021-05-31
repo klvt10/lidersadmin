@@ -13,7 +13,11 @@ export const Container = styled.div`
 export const Title = styled.h2`
   margin: 1.5rem;
   text-align: center;
-  color: var(--main-color);;
+  color: var(--main-color);
+  line-height: 2.5rem;
+`;
+
+export const BoxLoading = styled.section`
 `;
 
 export const BoxInfo = styled.section`
