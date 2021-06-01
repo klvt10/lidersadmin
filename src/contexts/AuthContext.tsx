@@ -69,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data } = await Api.post<AuthenticationResponse>('AuthenticationAPI', {
         login: login,
         password: encryptedPassword,
-        client: 'CLI',
+        client: 'ADM',
       }, {
         headers: {
           'content-type': 'application/json',
