@@ -1,14 +1,18 @@
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
 import { format, parseISO } from "date-fns";
 import ptBR from 'date-fns/locale/pt-BR';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { List } from 'react-content-loader'
 
 import { Api } from '@/services/Api';
-import Header from '@/components/Header';
 
+import Header from '@/components/Header';
 import Card from '@/components/Card';
-import { UserDetails } from '@/components/UserDetails';
 import FinanceCard from '@/components/FinanceCard';
+import LoadingComponent from '@/components/LoadingComponent';
+import { UserDetails } from '@/components/UserDetails';
 
 import {
   Container,
@@ -162,11 +166,11 @@ export default function User() {
   return(
     <>
       <Header />
-      <Container>
-        {!transfer ? <p>Carregando...</p> : (
+        <Container>
+        {!transfer ? <List /> : (
           <>
             <Card title='Usuário'>
-              {user ? <UserDetails user={user} /> : <p>Carregando...</p>}
+              {user ? <UserDetails user={user} /> : <LoadingComponent />}
             </Card>
             <Card title='Solicitação'>
               {transfer ? (
@@ -206,7 +210,7 @@ export default function User() {
                     text='Saldo'
                   />
                 </FinanceSection>
-              ) : <p>Carregando...</p>}
+              ) : <LoadingComponent />}
             </Card>
             <Card title='Últimas transferências'>
               {lastTransfers ? (
@@ -239,11 +243,29 @@ export default function User() {
                     </Rescues>
                   )}
                 </>
-              ) : <p>Carregando...</p>}
+              ) : <LoadingComponent />}
             </Card>
           </>
-        )}
-      </Container>
+          )}
+        </Container>
+      
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

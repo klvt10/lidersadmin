@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import ContentLoader from 'react-content-loader'
 import Router from 'next/router';
+import { parseCookies } from 'nookies';
 
 import { Api } from '@/services/Api';
 import Header from '@/components/Header';
 
 import { Container, Title, BoxInfo, BoxLoading } from '@/styles/pages/Home';
 import { useAuth } from '@/contexts/AuthContext';
+import { GetServerSideProps } from 'next';
 
 interface DataProps {
   denuncias: number;
@@ -95,3 +97,20 @@ export default function Home() {
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

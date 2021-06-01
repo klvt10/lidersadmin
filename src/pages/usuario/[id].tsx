@@ -1,18 +1,21 @@
+import Router, { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
+import { List } from 'react-content-loader'
 import { format, parseISO } from "date-fns";
 import ptBR from 'date-fns/locale/pt-BR';
+
+import { Api } from '@/services/Api';
 
 import Header from '@/components/Header';
 import Button from '@/components/Button'
 import ActionContainer from '@/components/ActionContainer'
+import Card from '@/components/Card';
 import FinanceCard from '@/components/FinanceCard'
 import { UserDetails } from '@/components/UserDetails';
-
-import { Api } from '@/services/Api';
-import Card from '@/components/Card';
-import Router, { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-
 import { ConfirmationModal } from '@/components/ConfirmationModal';
+import LoadingComponent from "@/components/LoadingComponent";
 
 import { 
   Container, 
@@ -213,15 +216,16 @@ export default function User() {
         onConfirm={handleUnblockUser}
       />
       <Header />
-      {!user ? <label>Carregando...</label> : (
         <Container>
+        {!user ? <List /> : (
+          <>
           <div>
             <Button 
               title='Remover Usuário' 
               urlImg='/delete.svg' 
               color='#E23A3A'
               onClick={() => setOpenedModal('delete')}
-              />
+            />
             {user.blocked ? (
               <Button 
                 title='Desbloquear Usuário' 
@@ -237,10 +241,10 @@ export default function User() {
             )}
           </div>
           <Card title='Ações do Usuário'>
-            {user ? <UserDetails user={user} /> : <p>Carregando...</p>}
+            {user ? <UserDetails user={user} /> : <LoadingComponent />}
           </Card>
           <Card title='Ações do Usuário'>
-            {!userActions ? <label>Carregando...</label> : (
+            {!userActions ? <LoadingComponent /> : (
               <ActionDetails>
                   <ActionContainer 
                     urlImg='/report-users.svg'
@@ -295,7 +299,7 @@ export default function User() {
             )}
           </Card>
           <Card title='Resultados do Usuário'>
-            {!userResults ? <label>Carregando...</label> : (
+            {!userResults ? <LoadingComponent /> : (
               <ActionDetails>
                 <ActionContainer 
                   urlImg='/reports.svg'
@@ -331,7 +335,7 @@ export default function User() {
             )}
           </Card>
           <Card title='Financeiro'>
-            {!userFinance ? <label>Carregando...</label> : (
+            {!userFinance ? <LoadingComponent /> : (
               <FinanceSection>
                 <FinanceCard
                   value={new Intl.NumberFormat('pt-BR', 
@@ -365,15 +369,38 @@ export default function User() {
             )}
           </Card>
           <Card title='Denúncias ao Usuário'>
-            {userReport.length === 0 && <p>Sem denúncias.</p>}
-            {userReport.map((report) => (
-              <UserReports>
-                <p>{report.reason}</p>
-              </UserReports>
-            ))}              
+          {!userReport ? <LoadingComponent /> : (
+            <div>
+              {userReport.length === 0 && <p>Sem denúncias.</p>}
+              {userReport.map((report) => (
+                <UserReports>
+                  <p>{report.reason}</p>
+                </UserReports>
+              ))}
+            </div>
+          )}           
           </Card>
+          </>
+        )}
         </Container>
-      )}
+     
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

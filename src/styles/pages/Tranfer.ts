@@ -21,6 +21,10 @@ export const TransferDetailContainer = styled.section`
     
     li {
       text-align: left;
+
+      & + li {
+        margin-top: 0.8rem;
+      }
     }
   }
 `;

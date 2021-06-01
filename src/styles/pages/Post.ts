@@ -5,7 +5,7 @@ export const Container = styled.div`
   margin: 0 auto;
   padding: 0 2rem;
 
-  > div {
+  .sectionButtons {
     margin-top: 1rem;
     gap: 1rem;
 

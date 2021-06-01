@@ -1,3 +1,5 @@
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
 import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO } from "date-fns";
 import ptBR from 'date-fns/locale/pt-BR';
@@ -110,3 +112,20 @@ export default function Home() {
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

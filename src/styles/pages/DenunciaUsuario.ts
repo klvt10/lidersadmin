@@ -13,7 +13,7 @@ export const HeadSection = styled.div`
   font-weight: normal;
 `
 
-export const UserDetails = styled.div`
+export const UserDetail = styled.div`
   display: flex;
   align-items: center;
 
@@ -45,6 +45,10 @@ export const OthersReports = styled.div`
     display: inline-block;
     margin: 1rem 0;
     font-weight: bold;
+  }
+
+  label {
+    display: block;
   }
 
   p {

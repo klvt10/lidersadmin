@@ -1,23 +1,29 @@
-import Button from "@/components/Button";
-import Card from "@/components/Card";
-import Header from "@/components/Header";
-import { Api } from "@/services/Api";
+import Router, { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
+import { List } from 'react-content-loader'
 import { format, parseISO } from "date-fns";
 import ptBR from 'date-fns/locale/pt-BR';
 
-import Router, { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { Api } from "@/services/Api";
 
-import { Container, HeadSection, UserDetails, OthersReports, ButtonsSection } from "@/styles/pages/DenunciaUsuario";
+import Button from "@/components/Button";
+import Header from "@/components/Header";
+import Card from "@/components/Card";
+import LoadingComponent from "@/components/LoadingComponent";
+import { UserDetails } from '@/components/UserDetails';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
-interface Report {
-  id: string;
-  reason: string;
-  userId: string;
-  reportedUserId: string;
-}
+import { 
+  Container, 
+  HeadSection, 
+  UserDetail, 
+  OthersReports, 
+  ButtonsSection 
+} from "@/styles/pages/DenunciaUsuario";
 
-interface ReportedUser {
+interface User {
   id: string;
   thumbnailUrl: string;
   name: string;
@@ -34,15 +40,22 @@ interface ReportedUser {
   userType: string;
   deviceType: string;
   createdAtFormatted: string;
+  blocked: boolean;
 }
+
+interface Report {
+  id: string;
+  reason: string;
+  userId: string;
+  reportedUserId: string;
+}
+
+type ReportedUser = User;
 
 interface Reports {
   id: string;
   reason: string;
 }
-
-type User = ReportedUser;
-
 
 export default function DenunciaUsuario () {
   const { query } = useRouter();
@@ -51,6 +64,9 @@ export default function DenunciaUsuario () {
   const [reports, setReports] = useState<Reports[]>([]);
   const [reportedUser, setReportedUser] = useState<ReportedUser>();
   const [user, setUser] = useState<User>();
+  const [openedModal, setOpenedModal] = useState<
+    'delete' | 'block' | 'unblock' | null
+  >(null);
 
   function handleGoToUser() {
     Router.push(`/usuario/${user.id}`)
@@ -59,6 +75,21 @@ export default function DenunciaUsuario () {
   function handleGoToReportedUser() {
     Router.push(`/usuario/${reportedUser.id}`)
   }
+
+  async function loadReportedUser() {
+    const { reportedUserId } = report;
+    
+    try {
+      const { data } = await Api.get<ReportedUser>(`Users/${reportedUserId}`)
+
+      setReportedUser({
+        ...data,
+        createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
+      });
+    }catch (error) {
+      //
+    }
+  }  
   
   useEffect(() => {
     const { id } = query;
@@ -78,14 +109,13 @@ export default function DenunciaUsuario () {
   }, [query]);
 
   useEffect(() => {
-
-    async function loadReportedUser() {
-      const { reportedUserId } = report;
-
+    
+    async function loadUser() {      
+  
       try {
-        const { data } = await Api.get<ReportedUser>(`Users/${reportedUserId}`)
-
-        setReportedUser({
+        const { data } = await Api.get<ReportedUser>(`Users/${report.userId}`)
+        
+        setUser({
           ...data,
           createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
         });
@@ -105,126 +135,159 @@ export default function DenunciaUsuario () {
     }
 
     if (report) {
+      loadUser();
       loadReports();
       loadReportedUser();
     }
   }, [report]);
 
-  useEffect(() => {
+  async function handleRemoveUser() {
+    try {
+      const { reportedUserId } = report;
 
-    async function loadUser() {
-      const { userId } = report;
+      await Api.delete(`Users/${reportedUserId}/Remove`);
 
-      try {
-        const { data } = await Api.get<ReportedUser>(`Users/${userId}`)
-
-        setUser({
-          ...data,
-          createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
-        });
-      }catch (error) {
-        //
-      }
+      Router.push('/usuarios');
+    } catch (e) {
+      alert('Falha ao remover o usuário. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
     }
-    if (report) {
-      loadUser();
+  }
+
+  async function handleBlockUser() {
+    try {
+      const { reportedUserId } = report;
+
+      await Api.get(`Users/${reportedUserId}/Block`);
+
+      loadReportedUser();
+    } catch (e) {
+      alert('Falha ao bloquear o usuário. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
     }
-  }, [report]);
+  }
+
+  async function handleUnblockUser() {
+    try {
+      const { reportedUserId } = report;
+
+      await Api.get(`Users/${reportedUserId}/Unblock`);
+
+      loadReportedUser();
+    } catch (e) {
+      alert('Falha ao desbloquear o usuário. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
+    }
+  }
  
   return (
     <>
+      <ConfirmationModal
+        isOpen={openedModal === 'delete'}
+        message="Tem certeza que deseja remover esse usuário?"
+        title="Remover usuário"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleRemoveUser}
+      />
+      <ConfirmationModal
+        isOpen={openedModal === 'block'}
+        message="Tem certeza que deseja bloquear esse usuário?"
+        title="Bloquear usuário"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleBlockUser}
+      />
+      <ConfirmationModal
+        isOpen={openedModal === 'unblock'}
+        message="Tem certeza que deseja desbloquear esse usuário?"
+        title="Desbloquear usuário"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleUnblockUser}
+      />
       <Header />
-      <Container>
-        <Card title="Denúncia">
-          {!report ? <label>Carregando...</label> : (
+        <Container>
+        {!report ? <List /> : (
+          <>
+          <Card title="Denúncia">
             <HeadSection>              
               <span>{report.reason}</span>
             </HeadSection>
-          )}
-          {!reportedUser ? <label>Carregando...</label> : (
-            <UserDetails>
-              <img src={!reportedUser.thumbnailUrl ? '/no-image.png': reportedUser.thumbnailUrl} alt="" />
-              <ul>
-                <li><strong>Nome:</strong> {reportedUser.name}</li>
-                <li><strong>Email:</strong> {reportedUser.email}</li>
-                <li><strong>Documento:</strong> {reportedUser.document}</li>
-                <li><strong>Administrador:</strong> {reportedUser.isAdmin}</li>
-                <li><strong>Data Cadastro:</strong> {reportedUser.createdAt}</li>
-                <li><strong>Telefone:</strong> {reportedUser.areaCode} {reportedUser.phoneNumber}</li>
-              </ul>        
-              <ul>
-                <li><strong>Social Id:</strong> {reportedUser.clientId}</li>
-                <li><strong>Provedor:</strong> {reportedUser.provider}</li>
-                <li><strong>Gênero:</strong> {reportedUser.gender}</li>
-                <li><strong>Login:</strong> {reportedUser.login}</li>
-                <li><strong>Tipo:</strong> {reportedUser.userType}</li>
-                <li><strong>Dispositivo:</strong> {reportedUser.deviceType}</li>
-              </ul>
-            </UserDetails>
-          )}
-            <OthersReports>
-              <span>Outras Denúncias ao Usuário</span>
-              {reports.length === 0 && <p>Sem denúncias</p>}
-              {reports.map((item) => (
-                <p key={item.id}>{item.reason}</p>
-              ))}
-            </OthersReports>
-            <ButtonsSection>
-            {!reportedUser ? <label>...</label> : (
-              <Button 
-                title='Visualizar Usuário' 
-                urlImg='/visibility-user.svg'
-                onClick={handleGoToReportedUser}
-              />
+            {!reportedUser ? <LoadingComponent /> : (
+              <div>
+                {user ? <UserDetails user={reportedUser} /> : <p>Carregando...</p>}
+                <OthersReports>
+                  <span>Outras Denúncias ao Usuário</span>
+                  {reports.length === 0 && <label>Sem outras denúncias</label>}
+                  {reports.map((item) => (
+                    <p key={item.id}>{item.reason}</p>
+                  ))}
+                </OthersReports>
+                <ButtonsSection>            
+                  <Button 
+                    title='Visualizar Usuário' 
+                    urlImg='/visibility-user.svg'
+                    onClick={handleGoToReportedUser}
+                  />
+                  <Button 
+                    title='Remover Usuário' 
+                    urlImg='/delete.svg'
+                    color='#E23A3A'
+                    onClick={() => setOpenedModal('delete')}
+                  />
+                  {reportedUser.blocked ? (
+                    <Button 
+                      title='Desbloquear Usuário' 
+                      urlImg='/unblock-user.svg'
+                      onClick={() => setOpenedModal('unblock')}
+                    />
+                  ) : (
+                    <Button 
+                      title='Bloquear Usuário' 
+                      urlImg='/block-user.svg'
+                      onClick={() => setOpenedModal('block')}
+                    />
+                  )}
+                </ButtonsSection>
+              </div>
             )}
-              <Button 
-                title='Remover Usuário' 
-                urlImg='/delete.svg'
-                color='#E23A3A'
-              />
-              <Button 
-                title='Desbloquear Usuário' 
-                urlImg='/unblock-user.svg'
-              />
-              <Button 
-                title='Bloquear Usuário' 
-                urlImg='/block-user.svg'
-              />
-            </ButtonsSection>
-        </Card>
-        <Card title='Usuário Denunciador'>
-          {!user ? <label>Carregando...</label> : (
-            <UserDetails>
-            <img src={!user.thumbnailUrl ? '/no-image.png': user.thumbnailUrl} alt="" />
-            <ul>
-                <li><strong>Nome:</strong> {user.name}</li>
-                <li><strong>Email:</strong> {user.email}</li>
-                <li><strong>Documento:</strong> {user.document}</li>
-                <li><strong>Administrador:</strong> {user.isAdmin}</li>
-                <li><strong>Data Cadastro:</strong> {user.createdAt}</li>
-                <li><strong>Telefone:</strong> {user.areaCode} {user.phoneNumber}</li>
-              </ul>        
-              <ul>
-                <li><strong>Social Id:</strong> {user.clientId}</li>
-                <li><strong>Provedor:</strong> {user.provider}</li>
-                <li><strong>Gênero:</strong> {user.gender}</li>
-                <li><strong>Login:</strong> {user.login}</li>
-                <li><strong>Tipo:</strong> {user.userType}</li>
-                <li><strong>Dispositivo:</strong> {user.deviceType}</li>
-              </ul>
-            </UserDetails>
-          )}
-            <ButtonsSection>
-            {!user ? <label>...</label> : (
-              <Button 
-                title='Visualizar Usuário' 
-                urlImg='/visibility-user.svg'
-                onClick={handleGoToUser}
-              />
+          </Card>
+          <Card title='Usuário Denunciador'>
+            {!user ? <LoadingComponent /> : (
+              <div>
+                  {user ? <UserDetails user={user} /> : <p>Carregando...</p>}
+                <ButtonsSection>
+                  <Button 
+                    title='Visualizar Usuário' 
+                    urlImg='/visibility-user.svg'
+                    onClick={handleGoToUser}
+                  />
+                </ButtonsSection>
+              </div>
             )}
-            </ButtonsSection>
-        </Card>
-      </Container>
+          </Card>
+          </>
+        )}
+        </Container>
+      
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

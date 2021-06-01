@@ -84,7 +84,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         setCookie(undefined, 'lidersclubadmin.user', JSON.stringify(data.user), {
-          maxAge: 60 * 60 * 24 * 7,
+          maxAge: 60 * 60 * 24,
           path: '/',
         });
 

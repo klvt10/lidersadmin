@@ -1,10 +1,13 @@
-import Header from '@/components/Header';
-import { Api } from '@/services/Api';
-import { Container, Users, Search } from '@/styles/pages/Users';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
 import { format, parseISO } from 'date-fns';
 import ReactPaginate from 'react-paginate';
 import { List } from 'react-content-loader'
+
+import Header from '@/components/Header';
+import { Api } from '@/services/Api';
+import { Container, Users, Search } from '@/styles/pages/Users';
 
 interface User {
   id: string;
@@ -142,3 +145,20 @@ export default function Home() {
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

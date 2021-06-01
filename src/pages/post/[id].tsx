@@ -1,16 +1,17 @@
+import { useEffect, useState } from 'react';
+import Router, { useRouter } from 'next/router';
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
+import { List } from 'react-content-loader'
 import { format, parseISO } from "date-fns";
 import ptBR from 'date-fns/locale/pt-BR';
 
+import { Api } from "@/services/Api";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
 import ActionContainer from '@/components/ActionContainer'
-
-import { Api } from "@/services/Api";
-import { useEffect, useState } from 'react';
-import Router, { useRouter } from 'next/router';
-
 import Card from '@/components/Card';
-
+import LoadingComponent from "@/components/LoadingComponent";
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 import { 
@@ -20,7 +21,6 @@ import {
   Comments, 
   Icons 
 } from "@/styles/pages/Post";
-
 
 interface Post {
   id: string;
@@ -151,7 +151,7 @@ export default function Post() {
       await Api.delete(`Posts/${idToRemove}/RemoveComment`);
       
       setComments(state => state.filter(item => item.id !== idToRemove))
-      
+
     } catch (e) {
       alert('Falha ao remover o comentário. Tente novamente mais tarde.')
     } finally {
@@ -190,9 +190,10 @@ export default function Post() {
         onConfirm={handleRemoveComment}
       />
       <Header />
-      {!post ? <label>Carregando...</label> : (
         <Container>
-          <div>
+        {!post ? <List /> : (
+        <>
+          <div className="sectionButtons">
             <Button 
               urlImg='/delete.svg'
               title='Remover Post'
@@ -226,42 +227,74 @@ export default function Post() {
               <Icons>
                 <ActionContainer 
                   urlImg='/likes.svg'
-                  text={`${post.likesCount} Curtidas`}
+                  text={post.likesCount === 1  
+                    ? `${post.likesCount} Curtida` 
+                    : `${post.likesCount} Curtidas`
+                  }
                 />
                 <ActionContainer 
                   urlImg='/comments.svg'
-                  text={`${post.commentsCount} Comentários`}
+                  text={post.commentsCount === 1  
+                    ? `${post.commentsCount} Comentário` 
+                    : `${post.commentsCount} Comentários`
+                  }
                 />
               </Icons>
             </PostDetails>
           </Card>
           <Card title="Comentários">
-            {comments.length === 0 && <p>Sem comentários.</p>}
-            {comments.map((comment) => (
-              <Comments key={comment.id}>
-                <span>{comment.description}</span>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setOpenedModal('deleteComment')
-                    setIdToRemove(comment.id)
-                  }}
-                >
-                  <img src="/delete.svg" alt="Excluir comentário" />
-                </button>
-              </Comments>
-            ))}
+          {!comments ? <LoadingComponent /> : (
+            <div>
+              {comments.length === 0 && <p>Sem comentários.</p>}
+              {comments.map((comment) => (
+                <Comments key={comment.id}>
+                  <span>{comment.description}</span>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setOpenedModal('deleteComment')
+                      setIdToRemove(comment.id)
+                    }}
+                  >
+                    <img src="/delete.svg" alt="Excluir comentário" />
+                  </button>
+                </Comments>
+              ))}
+            </div>
+          )}
           </Card>
           <Card title='Denúncias'>
-            {reports.length === 0 && <p>Sem denúncias.</p>}
-            {reports.map((report) => (
-              <Reports key={report.id}>
-                <span>{report.description}</span>
-              </Reports>
-            ))}
+          {!reports ? <LoadingComponent /> : (
+            <div>
+              {reports.length === 0 && <p>Sem denúncias.</p>}
+              {reports.map((report) => (
+                <Reports key={report.id}>
+                  <span>{report.description}</span>
+                </Reports>
+              ))}
+            </div>
+          )}
           </Card>
+        </>
+        )}
         </Container>
-      )}
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};

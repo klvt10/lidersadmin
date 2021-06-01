@@ -1,18 +1,29 @@
-import { useRouter } from "next/router";
+import Router, { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { GetServerSideProps } from 'next';
+import { parseCookies } from 'nookies';
+import { List } from 'react-content-loader'
 import { format, parseISO } from "date-fns";
 import ptBR from 'date-fns/locale/pt-BR';
 
 import { Api } from "@/services/Api";
-import { UserDetails } from '@/components/UserDetails';
+
+import Button from "@/components/Button";
 import Header from "@/components/Header";
 import Card from "@/components/Card";
-
 import ActionContainer from "@/components/ActionContainer";
+import LoadingComponent from "@/components/LoadingComponent";
+import { UserDetails } from '@/components/UserDetails';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
-
-import { Container, PostDetails, Comments, Icons, Reports, Buttons } from "@/styles/pages/DenunciaPost"
-import Button from "@/components/Button";
+import { 
+  Container, 
+  PostDetails, 
+  Comments, 
+  Icons, 
+  Reports, 
+  Buttons 
+} from "@/styles/pages/DenunciaPost"
 
 interface User {
   thumbnailUrl: string;
@@ -30,6 +41,7 @@ interface User {
   userType: string;
   deviceType: string;
   createdAtFormatted: string;
+  blocked: boolean;
 }
 
 interface ReportDetail {
@@ -47,6 +59,7 @@ interface ReportedPost {
   likesCount: number;
   commentsCount: number;
   createdAt: string;
+  blocked: boolean;
   
   createdAtFormatted: string;
 }
@@ -70,42 +83,47 @@ export default function DenunciaPost () {
   const [reports, setReports] = useState<Reports[]>([]);
   const [reportedPost, setReportedPost] = useState<ReportedPost>();
   const [report, setReport] = useState<ReportDetail>();
+  const [openedModal, setOpenedModal] = useState<
+    'delete' | 'block' | 'unblock' | 'deleteComment' | null
+  >(null);
 
-  useEffect(() => {
+
+  async function loadReport() {
     const { id } = query;
-   
-    async function loadReport() {
-      try {
-        const { data } = await Api.get<ReportDetail>(`PostReport/${id}`)
 
-        setReport({
-          ...data,
-          });
-      } catch (error) {
-        // alert('Erro ao executar. Tente novamente.');
-      }
+    try {
+      const { data } = await Api.get<ReportDetail>(`PostReport/${id}`)
+      console.log(data)
+      setReport(data);
+    } catch (error) {
+      // alert('Erro ao executar. Tente novamente.');
     }
-
-    loadReport();
-  }, [query]);
+  }
 
   useEffect(() => {
-    async function loadUser() {
-      try {
-        const { data } = await Api.get<User>(`Users/${report.userId}`)
-        
-        setUser({
-          ...data,
-          createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
-        });
-      } catch (error) {
-        // alert('Erro ao executar. Tente novamente.');
-      }
+    if (query?.id) {
+      loadReport()
     }
+  }, [query])
 
+  useEffect(() => { 
+  
+    async function loadUser() {
+        try {
+          const { data } = await Api.get<User>(`Users/${report.userId}`)
+          
+          setUser({
+            ...data,
+            createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
+          });
+        } catch (error) {
+          // alert('Erro ao executar. Tente novamente.');
+        }
+      }
+    
     async function loadComments() {
       try {
-        const { data } = await Api.get<Comment[]>(`Posts/${report.post_Id}/Comments`);
+        const { data } = await Api.get<Comment[]>(`Posts/${report.userId}/Comments`);
 
         setComments(data);
       } catch (error) {
@@ -115,7 +133,7 @@ export default function DenunciaPost () {
 
     async function loadReports() {
       try {
-        const { data } = await Api.get<Reports[]>(`Posts/${report.post_Id}/Reports`);
+        const { data } = await Api.get<Reports[]>(`Posts/${report.userId}/Reports`);
 
         setReports(data.filter((item) => item.id !== report.id));
       } catch (error) {
@@ -126,11 +144,10 @@ export default function DenunciaPost () {
     async function loadReportedPost() {
       try {
         const { data } = await Api.get<ReportedPost>(`Posts/${report.post_Id}`)
-
-        console.log(data)
+        
         setReportedPost( {
           ...data,
-          createdAtFormatted: data.createdAt ? format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }) : '',
+          createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
         });
       }catch (error) {
         //
@@ -145,83 +162,165 @@ export default function DenunciaPost () {
     }
   }, [report]);
 
+  async function handleRemovePost() {
+    try {
+      const { post_Id } = report;
+
+      await Api.delete(`Posts/${post_Id}/Remove`);
+
+      Router.push('/posts');
+    } catch (e) {
+      alert('Falha ao remover o post. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
+    }
+  }
+
+  async function handleBlockPost() {
+    try {
+      const { post_Id } = report;
+
+      await Api.get(`Posts/${post_Id}/Block`);
+      loadReport();
+    } catch (e) {
+      alert('Falha ao bloquear o post. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
+    }
+  }
+
+  async function handleUnblockPost() {
+    try {
+      const { post_Id } = report;
+
+      await Api.get(`Posts/${post_Id}/Unblock`);
+      loadReport();
+    } catch (e) {
+      alert('Falha ao desbloquear o usuário. Tente novamente mais tarde.')
+    } finally {
+      setOpenedModal(null);
+    }
+  }
+
   return (
     <>
+      <ConfirmationModal
+        isOpen={openedModal === 'delete'}
+        message="Tem certeza que deseja remover esse post?"
+        title="Remover post"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleRemovePost}
+      />
+      <ConfirmationModal
+        isOpen={openedModal === 'block'}
+        message="Tem certeza que deseja bloquear esse post?"
+        title="Bloquear post"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleBlockPost}
+      />
+      <ConfirmationModal
+        isOpen={openedModal === 'unblock'}
+        message="Tem certeza que deseja desbloquear esse post?"
+        title="Desbloquear post"
+        onClose={() => setOpenedModal(null)}
+        onConfirm={handleUnblockPost}
+      />
       <Header />
-      <Container>
-        <Card title="Post">
-          {!report ? <p>Carregando...</p> : (
+        <Container>
+        {!reportedPost ? <List /> : (
+        <>
+          <Card title="Post">
             <label className="report">{report.reason}</label>
-          )}
-          <PostDetails>
-          {!reportedPost ? <p>Carregando...</p> : (            
-            <div>
-              <img src={!reportedPost.thumbnailUrl ? '/no-image.png': reportedPost.thumbnailUrl} alt="" />
-                <ul>
-                  <li><strong>Data Postagem: </strong> {reportedPost.createdAtFormatted}</li>
-                  <li><strong>Usuário: </strong>{reportedPost.user}</li>
-                  <li><strong>Descrição: </strong>{reportedPost.description}</li>
-                </ul>
-            </div>
-          )}
-          {!reportedPost ? <p>Carregando...</p> : ( 
-            <Icons>
-              <ActionContainer 
-                urlImg='/likes.svg'
-                text={reportedPost.likesCount === 1  
-                  ? `${reportedPost.likesCount} Curtida` 
-                  : `${reportedPost.likesCount} Curtidas`
-                }
+            <PostDetails>       
+              <div>
+                <img src={!reportedPost.thumbnailUrl ? '/no-image.png': reportedPost.thumbnailUrl} alt="" />
+                  <ul>
+                    <li><strong>Data Postagem: </strong> {reportedPost.createdAtFormatted}</li>
+                    <li><strong>Usuário: </strong>{reportedPost.user}</li>
+                    <li><strong>Descrição: </strong>{reportedPost.description}</li>
+                  </ul>
+              </div>
+              <Icons>
+                <ActionContainer 
+                  urlImg='/likes.svg'
+                  text={reportedPost.likesCount === 1  
+                    ? `${reportedPost.likesCount} Curtida` 
+                    : `${reportedPost.likesCount} Curtidas`
+                  }
+                />
+                <ActionContainer 
+                  urlImg='/comments.svg'
+                  text={reportedPost.commentsCount === 1  
+                    ? `${reportedPost.commentsCount} Comentário` 
+                    : `${reportedPost.commentsCount} Comentários`
+                  }
+                />
+              </Icons>
+            </PostDetails>
+            <Comments>
+              <span>Comentários</span>
+                {comments.length === 0 && <p>Sem comentários.</p>}
+                {comments.map((comment) => (
+                  <div>
+                    <p>{comment.description}</p>
+                    <a href="">
+                      <img src="/delete.svg" alt="Excluir comentário" />
+                    </a>
+                  </div>
+                ))}            
+            </Comments>
+            <Reports>
+              <span>Outras Denúncias ao Post</span>
+              {reports.length === 0 && <p>Sem outras denúncias.</p>}
+              {reports.map((report) => (
+                <p>{report.reason}</p>
+              ))}
+            </Reports>
+            <Buttons>
+              <Button 
+                title='Remover Post'
+                urlImg='/delete.svg'
+                color='#E23A3A'
+                onClick={() => setOpenedModal('delete')}
               />
-              <ActionContainer 
-                urlImg='/comments.svg'
-                text={reportedPost.commentsCount === 1  
-                  ? `${reportedPost.commentsCount} Comentário` 
-                  : `${reportedPost.commentsCount} Comentários`
-                }
-              />
-            </Icons>
+              {reportedPost.blocked ? (
+                <Button 
+                  urlImg='/check.svg'
+                  title='Desbloquear Post'
+                  onClick={() => setOpenedModal('unblock')}
+                />
+              ) : (
+                <Button 
+                  urlImg='/block.svg'
+                  title='Bloquear Post'
+                  onClick={() => setOpenedModal('block')}
+                />
+              )}
+            </Buttons>
+          </Card>
+          <Card title='Usuário Denunciador'>
+            {user ? <UserDetails user={user} /> : <LoadingComponent />}
+          </Card>
+          </>
           )}
-          </PostDetails>
-          <Comments>
-            <span>Comentários</span>
-              {comments.length === 0 && <p>Sem comentários.</p>}
-              {comments.map((comment) => (
-                <div>
-                  <p>{comment.description}</p>
-                  <a href="">
-                    <img src="/delete.svg" alt="Excluir comentário" />
-                  </a>
-                </div>
-              ))}            
-          </Comments>
-          <Reports>
-            <span>Outras Denúncias ao Post</span>
-            {reports.length === 0 && <p>Sem outras denúncias.</p>}
-            {reports.map((report) => (
-              <p>{report.reason}</p>
-            ))}
-          </Reports>
-          <Buttons>
-            <Button 
-              title='Remover Post'
-              urlImg='/delete.svg'
-              color='#E23A3A'
-            />
-            <Button 
-              title='Desbloquear Post'
-              urlImg='/unblock-user.svg'
-            />
-            <Button 
-              title='Bloquear Post'
-              urlImg='/block-user.svg'
-            />
-          </Buttons>
-        </Card>
-        <Card title='Usuário Denunciador'>
-          {user ? <UserDetails user={user} /> : <p>Carregando...</p>}
-        </Card>
-      </Container>
+        </Container>
     </>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};
