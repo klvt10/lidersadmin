@@ -92,4 +92,10 @@ export default createGlobalStyle`
     font-weight: bold;
     background: var(--main-color);
   }
+
+  @media (max-width: 781px) {
+    html {
+        font-size: 87.5%; /*14px*/
+    }
+  }
 `;

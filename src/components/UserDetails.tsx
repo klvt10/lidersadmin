@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Container } from '@/styles/pages/component/UserDetails';
+import { Container, ContainerMobile } from '@/styles/pages/component/UserDetails';
 
 interface User {
   thumbnailUrl: string;
@@ -26,6 +26,7 @@ interface UserDetailsProps {
 
 export function UserDetails({ user }: UserDetailsProps) {
   return (
+    <>
     <Container>
       <img
         className="userThumbnail"
@@ -36,7 +37,7 @@ export function UserDetails({ user }: UserDetailsProps) {
         <li><strong>Nome:</strong> {user.name}</li>
         <li><strong>Email:</strong> {user.email}</li>
         <li><strong>Documento:</strong> {user.document}</li>
-        <li><strong>Administrador:</strong> {user.isAdmin}</li>
+        <li><strong>Administrador:</strong> {user.isAdmin ? 'Sim' : 'Não'}</li>
         <li><strong>Data Cadastro:</strong> {user.createdAtFormatted || user.createdAt}</li>
         <li><strong>Telefone:</strong> {user.areaCode} {user.phoneNumber}</li>
       </ul>        
@@ -49,5 +50,31 @@ export function UserDetails({ user }: UserDetailsProps) {
         <li><strong>Dispositivo:</strong> {user.deviceType}</li>
       </ul>
     </Container>
+    <ContainerMobile>
+      <div className="first-list">
+        <img
+          className="userThumbnail"
+          src={!user.thumbnailUrl ? '/no-image.png': user.thumbnailUrl}
+          alt="Thumbnail"
+        />
+        <ul>
+          <li><strong>Nome:</strong> {user.name}</li>
+          <li><strong>Dt. Cadastro:</strong> {user.createdAtFormatted || user.createdAt}</li>
+          <li><strong>Login:</strong> {user.login}</li>
+          <li><strong>Administrador:</strong> {user.isAdmin ? 'Sim' : 'Não'}</li>
+        </ul>
+      </div>        
+      <ul className="second-list">
+        <li><strong>Documento:</strong> {user.document}</li>
+        <li><strong>Telefone:</strong> {user.areaCode} {user.phoneNumber}</li>
+        <li><strong>Email:</strong> {user.email}</li>
+        <li><strong>Gênero:</strong> {user.gender}</li>
+        <li><strong>Social Id:</strong> {user.clientId}</li>
+        <li><strong>Provedor:</strong> {user.provider}</li>
+        <li><strong>Tipo:</strong> {user.userType}</li>
+        <li><strong>Dispositivo:</strong> {user.deviceType}</li>
+      </ul>
+    </ContainerMobile>
+    </>
   );
 }

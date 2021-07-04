@@ -27,5 +27,9 @@ export const Container = styled.div<ContainerProps>`
     align-items: flex-start;
     gap: 0.25rem;
   }
+
+  @media (max-width: 781px) {
+    font-size: 1rem;
+  }
 `
 

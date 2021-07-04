@@ -1,28 +1,27 @@
-import Router, { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { GetServerSideProps } from 'next';
-import { parseCookies } from 'nookies';
-import { List } from 'react-content-loader'
+import Router, { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { GetServerSideProps } from "next";
+import { parseCookies } from "nookies";
+import { List } from "react-content-loader";
 import { format, parseISO } from "date-fns";
-import ptBR from 'date-fns/locale/pt-BR';
 
-import { Api } from '@/services/Api';
+import { Api } from "@/services/Api";
 
-import Header from '@/components/Header';
-import Button from '@/components/Button'
-import ActionContainer from '@/components/ActionContainer'
-import Card from '@/components/Card';
-import FinanceCard from '@/components/FinanceCard'
-import { UserDetails } from '@/components/UserDetails';
-import { ConfirmationModal } from '@/components/ConfirmationModal';
+import Header from "@/components/Header";
+import Button from "@/components/Button";
+import ActionContainer from "@/components/ActionContainer";
+import Card from "@/components/Card";
+import FinanceCard from "@/components/FinanceCard";
+import { UserDetails } from "@/components/UserDetails";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import LoadingComponent from "@/components/LoadingComponent";
 
-import { 
-  Container, 
-  ActionDetails, 
-  UserReports, 
-  FinanceSection 
-} from '@/styles/pages/User'
+import {
+  Container,
+  ActionDetails,
+  UserReports,
+  FinanceSection,
+} from "@/styles/pages/User";
 
 interface User {
   thumbnailUrl: string;
@@ -54,15 +53,17 @@ interface UserActions {
   transfersCount: number;
 }
 
-type UserResults = Pick<UserActions, 
-    'id' | 'reportsCount' | 'usersHiddenCount' | 'likesCount' | 'commentsCount'>;
+type UserResults = Pick<
+  UserActions,
+  "id" | "reportsCount" | "usersHiddenCount" | "likesCount" | "commentsCount"
+>;
 
 interface UserFinance {
   id: string;
   payments: number;
   transfersWaiting: number;
   transfersDone: number;
-  balance: number;  
+  balance: number;
 }
 
 interface UserReport {
@@ -80,22 +81,22 @@ export default function User() {
   const [userFinance, setUserFinance] = useState<UserFinance>();
   const [userReport, setUserReport] = useState<UserReport[]>([]);
   const [openedModal, setOpenedModal] = useState<
-    'delete' | 'block' | 'unblock' | null
+    "delete" | "block" | "unblock" | null
   >(null);
 
   async function loadUser() {
     const { id } = query;
 
-      try {
-        const { data } = await Api.get<User>(`Users/${id}`)
+    try {
+      const { data } = await Api.get<User>(`Users/${id}`);
 
-        setUser({
-          ...data,
-          createdAtFormatted: format(parseISO(data.createdAt), 'dd/MM/y', { locale: ptBR }),
-        });
-      } catch (error) {
-        // alert('Erro ao executar. Tente novamente.');
-      }
+      setUser({
+        ...data,
+        createdAtFormatted: format(parseISO(data.createdAt), "dd/MM/yyyy"),
+      });
+    } catch (error) {
+      // alert('Erro ao executar. Tente novamente.');
+    }
   }
 
   useEffect(() => {
@@ -103,17 +104,17 @@ export default function User() {
 
     async function loadActionsUser() {
       try {
-        const { data } = await Api.get<UserActions>(`Users/${id}/Actions`)
+        const { data } = await Api.get<UserActions>(`Users/${id}/Actions`);
 
         setUserActions(data);
       } catch (error) {
         // alert('Erro ao executar. Tente novamente.');
       }
     }
-    
+
     async function loadResultsUser() {
       try {
-        const { data } = await Api.get<UserResults>(`Users/${id}/Results`)
+        const { data } = await Api.get<UserResults>(`Users/${id}/Results`);
 
         setUserResults(data);
       } catch (error) {
@@ -123,12 +124,10 @@ export default function User() {
 
     async function loadUserFinance() {
       try {
-        const { data } = await Api.get<UserFinance>(`Users/${id}/Finance`)
+        const { data } = await Api.get<UserFinance>(`Users/${id}/Finance`);
 
         setUserFinance(data);
-      } catch (error) {
-
-      }
+      } catch (error) {}
     }
 
     async function loadUserReports() {
@@ -142,12 +141,12 @@ export default function User() {
     }
 
     if (query) {
-    loadUser();
-    loadActionsUser();
-    loadResultsUser();
-    loadUserFinance();
-    loadUserReports();
-  } 
+      loadUser();
+      loadActionsUser();
+      loadResultsUser();
+      loadUserFinance();
+      loadUserReports();
+    }
   }, [query]);
 
   async function handleRemoveUser() {
@@ -156,9 +155,9 @@ export default function User() {
 
       await Api.delete(`Users/${id}/Remove`);
 
-      Router.push('/usuarios');
+      Router.push("/usuarios");
     } catch (e) {
-      alert('Falha ao remover o usuário. Tente novamente mais tarde.')
+      alert("Falha ao remover o usuário. Tente novamente mais tarde.");
     } finally {
       setOpenedModal(null);
     }
@@ -172,7 +171,7 @@ export default function User() {
 
       loadUser();
     } catch (e) {
-      alert('Falha ao bloquear o usuário. Tente novamente mais tarde.')
+      alert("Falha ao bloquear o usuário. Tente novamente mais tarde.");
     } finally {
       setOpenedModal(null);
     }
@@ -186,215 +185,239 @@ export default function User() {
 
       loadUser();
     } catch (e) {
-      alert('Falha ao desbloquear o usuário. Tente novamente mais tarde.')
+      alert("Falha ao desbloquear o usuário. Tente novamente mais tarde.");
     } finally {
       setOpenedModal(null);
     }
   }
 
-  return(
+  return (
     <>
       <ConfirmationModal
-        isOpen={openedModal === 'delete'}
+        isOpen={openedModal === "delete"}
         message="Tem certeza que deseja remover esse usuário?"
         title="Remover usuário"
         onClose={() => setOpenedModal(null)}
         onConfirm={handleRemoveUser}
       />
       <ConfirmationModal
-        isOpen={openedModal === 'block'}
+        isOpen={openedModal === "block"}
         message="Tem certeza que deseja bloquear esse usuário?"
         title="Bloquear usuário"
         onClose={() => setOpenedModal(null)}
         onConfirm={handleBlockUser}
       />
       <ConfirmationModal
-        isOpen={openedModal === 'unblock'}
+        isOpen={openedModal === "unblock"}
         message="Tem certeza que deseja desbloquear esse usuário?"
         title="Desbloquear usuário"
         onClose={() => setOpenedModal(null)}
         onConfirm={handleUnblockUser}
       />
       <Header />
-        <Container>
-        {!user ? <List /> : (
+      <Container>
+        {!user ? (
+          <List uniqueKey="load-list" />
+        ) : (
           <>
-          <div>
-            <Button 
-              title='Remover Usuário' 
-              urlImg='/delete.svg' 
-              color='#E23A3A'
-              onClick={() => setOpenedModal('delete')}
-            />
-            {user.blocked ? (
-              <Button 
-                title='Desbloquear Usuário' 
-                urlImg='/unblock-user.svg'
-                onClick={() => setOpenedModal('unblock')}
+            <div className="buttons">
+              <Button
+                title="Remover Usuário"
+                urlImg="/delete.svg"
+                color="#E23A3A"
+                onClick={() => setOpenedModal("delete")}
               />
-            ) : (
-              <Button 
-                title='Bloquear Usuário' 
-                urlImg='/block-user.svg'
-                onClick={() => setOpenedModal('block')}
-              />
-            )}
-          </div>
-          <Card title='Ações do Usuário'>
-            {user ? <UserDetails user={user} /> : <LoadingComponent />}
-          </Card>
-          <Card title='Ações do Usuário'>
-            {!userActions ? <LoadingComponent /> : (
-              <ActionDetails>
-                  <ActionContainer 
-                    urlImg='/report-users.svg'
-                    text={userActions.reportsCount === 1  
-                      ? `${userActions.reportsCount} Usuário reportado` 
-                      : `${userActions.reportsCount} Usuários reportados`
-                    }
-                  />
-                  <ActionContainer 
-                    urlImg='/hidden-users.svg'
-                    text={userActions.usersHiddenCount === 1  
-                      ? `${userActions.usersHiddenCount} Usuário oculto` 
-                      : `${userActions.usersHiddenCount} Usuários ocultos`
-                    }
-                  />
-                  <ActionContainer 
-                    urlImg='/likes.svg'
-                    text={userActions.likesCount === 1  
-                      ? `${userActions.likesCount} Curtida` 
-                      : `${userActions.likesCount} Curtidas`
-                    }
-                  />
-                  <ActionContainer 
-                    urlImg='/comments.svg'
-                    text={userActions.commentsCount === 1  
-                      ? `${userActions.commentsCount} Comentário` 
-                      : `${userActions.commentsCount} Comentários`
-                    }
-                  />
-                  <ActionContainer 
-                    urlImg='/partners.svg'
-                    text={userActions.clientCount === 1  
-                      ? `${userActions.clientCount} Parceiro` 
-                      : `${userActions.clientCount} Parceiros`
-                    }
-                  />
-                  <ActionContainer 
-                    urlImg='/teams.svg'
-                    text={userActions.teamsCount === 1  
-                      ? `${userActions.teamsCount} Equipe` 
-                      : `${userActions.teamsCount} Equipes`
-                    }
-                  />
-                  <ActionContainer 
-                    urlImg='/cashback.svg'
-                    text={userActions.transfersCount === 1  
-                      ? `${userActions.transfersCount} Transferência` 
-                      : `${userActions.transfersCount} Transferências`
-                    }
-                  />
-              </ActionDetails>
-            )}
-          </Card>
-          <Card title='Resultados do Usuário'>
-            {!userResults ? <LoadingComponent /> : (
-              <ActionDetails>
-                <ActionContainer 
-                  urlImg='/reports.svg'
-                  text={userResults.reportsCount === 1  
-                    ? `${userResults.reportsCount} Report` 
-                    : `${userResults.reportsCount} Reports`
-                  }
-                  color='#E23A3A'
+              {user.blocked ? (
+                <Button
+                  title="Desbloquear Usuário"
+                  urlImg="/unblock-user.svg"
+                  onClick={() => setOpenedModal("unblock")}
                 />
-                <ActionContainer 
-                  urlImg='/hidden-red.svg'
-                  text={userResults.usersHiddenCount === 1  
-                    ? `${userResults.usersHiddenCount} Usuário ocultou` 
-                    : `${userResults.usersHiddenCount} Usuários ocultaram`
-                  }
-                  color='#E23A3A'
+              ) : (
+                <Button
+                  title="Bloquear Usuário"
+                  urlImg="/block-user.svg"
+                  onClick={() => setOpenedModal("block")}
                 />
-                <ActionContainer 
-                  urlImg='/likes.svg'
-                  text={userResults.likesCount === 1  
-                    ? `${userResults.likesCount} Curtida em posts` 
-                    : `${userResults.likesCount} Curtidas em posts`
-                  }
-                />
-                <ActionContainer 
-                  urlImg='/comments.svg'
-                  text={userResults.commentsCount === 1  
-                    ? `${userResults.commentsCount} Comentário em posts` 
-                    : `${userResults.commentsCount} Comentários em posts`
-                  }
-                />
-              </ActionDetails>
-            )}
-          </Card>
-          <Card title='Financeiro'>
-            {!userFinance ? <LoadingComponent /> : (
-              <FinanceSection>
-                <FinanceCard
-                  value={new Intl.NumberFormat('pt-BR', 
-                    { style: 'decimal', minimumFractionDigits: 2 })
-                    .format(userFinance.payments)
-                  }
-                  text='Pagamentos'
-                />
-                <FinanceCard
-                  value={new Intl.NumberFormat('pt-BR', 
-                    { style: 'decimal', minimumFractionDigits: 2 })
-                    .format(userFinance.transfersWaiting)
-                  }
-                  text='Aguardando'
-                />
-                <FinanceCard
-                  value={new Intl.NumberFormat('pt-BR', 
-                    { style: 'decimal', minimumFractionDigits: 2 })
-                    .format(userFinance.transfersDone)
-                  }
-                  text='Transferido'
-                />
-                <FinanceCard
-                  value={new Intl.NumberFormat('pt-BR', 
-                    { style: 'decimal', minimumFractionDigits: 2 })
-                    .format(userFinance.balance)
-                  }
-                  text='Saldo'
-                />
-              </FinanceSection>
-            )}
-          </Card>
-          <Card title='Denúncias ao Usuário'>
-          {!userReport ? <LoadingComponent /> : (
-            <div>
-              {userReport.length === 0 && <p>Sem denúncias.</p>}
-              {userReport.map((report) => (
-                <UserReports>
-                  <p>{report.reason}</p>
-                </UserReports>
-              ))}
+              )}
             </div>
-          )}           
-          </Card>
+            <Card title="Ações do Usuário">
+              {user ? <UserDetails user={user} /> : <LoadingComponent />}
+            </Card>
+            <Card title="Ações do Usuário">
+              {!userActions ? (
+                <LoadingComponent />
+              ) : (
+                <ActionDetails>
+                  <ActionContainer
+                    urlImg="/report-users.svg"
+                    text={
+                      userActions.reportsCount === 1
+                        ? `${userActions.reportsCount} Usuário reportado`
+                        : `${userActions.reportsCount} Usuários reportados`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/hidden-users.svg"
+                    text={
+                      userActions.usersHiddenCount === 1
+                        ? `${userActions.usersHiddenCount} Usuário oculto`
+                        : `${userActions.usersHiddenCount} Usuários ocultos`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/likes.svg"
+                    text={
+                      userActions.likesCount === 1
+                        ? `${userActions.likesCount} Curtida`
+                        : `${userActions.likesCount} Curtidas`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/comments.svg"
+                    text={
+                      userActions.commentsCount === 1
+                        ? `${userActions.commentsCount} Comentário`
+                        : `${userActions.commentsCount} Comentários`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/partners.svg"
+                    text={
+                      userActions.clientCount === 1
+                        ? `${userActions.clientCount} Parceiro`
+                        : `${userActions.clientCount} Parceiros`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/teams.svg"
+                    text={
+                      userActions.teamsCount === 1
+                        ? `${userActions.teamsCount} Equipe`
+                        : `${userActions.teamsCount} Equipes`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/cashback.svg"
+                    text={
+                      userActions.transfersCount === 1
+                        ? `${userActions.transfersCount} Transferência`
+                        : `${userActions.transfersCount} Transferências`
+                    }
+                  />
+                </ActionDetails>
+              )}
+            </Card>
+            <Card title="Resultados do Usuário">
+              {!userResults ? (
+                <LoadingComponent />
+              ) : (
+                <ActionDetails>
+                  <ActionContainer
+                    urlImg="/reports.svg"
+                    text={
+                      userResults.reportsCount === 1
+                        ? `${userResults.reportsCount} Report`
+                        : `${userResults.reportsCount} Reports`
+                    }
+                    color="#E23A3A"
+                  />
+                  <ActionContainer
+                    urlImg="/hidden-red.svg"
+                    text={
+                      userResults.usersHiddenCount === 1
+                        ? `${userResults.usersHiddenCount} Usuário ocultou`
+                        : `${userResults.usersHiddenCount} Usuários ocultaram`
+                    }
+                    color="#E23A3A"
+                  />
+                  <ActionContainer
+                    urlImg="/likes.svg"
+                    text={
+                      userResults.likesCount === 1
+                        ? `${userResults.likesCount} Curtida em posts`
+                        : `${userResults.likesCount} Curtidas em posts`
+                    }
+                  />
+                  <ActionContainer
+                    urlImg="/comments.svg"
+                    text={
+                      userResults.commentsCount === 1
+                        ? `${userResults.commentsCount} Comentário em posts`
+                        : `${userResults.commentsCount} Comentários em posts`
+                    }
+                  />
+                </ActionDetails>
+              )}
+            </Card>
+            <Card title="Financeiro">
+              {!userFinance ? (
+                <LoadingComponent />
+              ) : (
+                <FinanceSection>
+                  <div className="line-card">
+                    <FinanceCard
+                      value={new Intl.NumberFormat("pt-BR", {
+                        style: "decimal",
+                        minimumFractionDigits: 2,
+                      }).format(userFinance.payments)}
+                      text="Pagamentos"
+                    />
+                    <FinanceCard
+                      value={new Intl.NumberFormat("pt-BR", {
+                        style: "decimal",
+                        minimumFractionDigits: 2,
+                      }).format(userFinance.transfersWaiting)}
+                      text="Aguardando"
+                    />
+                  </div>
+                  <div className="line-card">
+                    <FinanceCard
+                      value={new Intl.NumberFormat("pt-BR", {
+                        style: "decimal",
+                        minimumFractionDigits: 2,
+                      }).format(userFinance.transfersDone)}
+                      text="Transferido"
+                    />
+                    <FinanceCard
+                      value={new Intl.NumberFormat("pt-BR", {
+                        style: "decimal",
+                        minimumFractionDigits: 2,
+                      }).format(userFinance.balance)}
+                      text="Saldo"
+                    />
+                  </div>
+                </FinanceSection>
+              )}
+            </Card>
+            <Card title="Denúncias ao Usuário">
+              {!userReport ? (
+                <LoadingComponent />
+              ) : (
+                <div>
+                  {userReport.length === 0 && <p>Sem denúncias.</p>}
+                  {userReport.map((report) => (
+                    <UserReports>
+                      <li>{report.reason}</li>
+                    </UserReports>
+                  ))}
+                </div>
+              )}
+            </Card>
           </>
         )}
-        </Container>
-     
+      </Container>
     </>
-  )
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const { ['lidersclubadmin.token']: token } = parseCookies(ctx);
+  const { ["lidersclubadmin.token"]: token } = parseCookies(ctx);
 
   if (!token) {
     return {
       redirect: {
-        destination: '/login',
+        destination: "/login",
         permanent: false,
       },
     };

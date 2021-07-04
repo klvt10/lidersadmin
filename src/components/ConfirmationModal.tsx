@@ -40,7 +40,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <header>
           <span>{title}</span>
           <button type="button" onClick={onClose} className="closeButton">
-            x
+            X
           </button>
         </header>
         <div>{message}</div>

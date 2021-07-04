@@ -9,7 +9,8 @@ import { List } from 'react-content-loader'
 import { Api } from '@/services/Api';
 import Header from '@/components/Header';
 
-import { Container, Search, Posts } from '@/styles/pages/Posts';
+import { Container, Search, Posts, PostMobile } from '@/styles/pages/Posts';
+import { useIsMobile } from '@/utils/IsMobile';
 
 interface Post {
   id: string;
@@ -40,6 +41,7 @@ export default function Home() {
   const [count, setCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
+  const isMobile = useIsMobile();
 
   const filteredPosts = useMemo(
     () => posts.filter(u =>
@@ -93,14 +95,17 @@ export default function Home() {
     <>
       <Header />
       <Container>
-        {/* <Search>
+        <Search>
           <input
             type="text"
             placeholder="Pesquisar"
             value={search}
             onChange={event => setSearch(event.target.value)}
           />
-        </Search> */}
+          <button className="buttonMobile" type="button">
+            <img src="/search.svg" alt="Botão de pesquisar" />
+          </button>
+        </Search>
           <Posts>
             <li>
               <span className="thumb">Thumb</span>
@@ -110,10 +115,10 @@ export default function Home() {
               <span className="user">Usuário</span>
               <span className="edit">Visualizar</span>
             </li>
-            {loading ? <List /> : filteredPosts.map((post, idx) => (
+            {loading ? <List uniqueKey="load-list" /> : filteredPosts.map((post, idx) => (
               <li key={idx.toString()}>
                 <span className="thumb">
-                  <img src={post.thumbnail} alt="photo" />
+                  <img src={!post.thumbnail ? '/no-image.png': post.thumbnail} alt="photo" />
                 </span>
                 <span className="description">{post.descricao}</span>
                 <span className="date">{post.createdAtFormatted}</span>
@@ -121,12 +126,36 @@ export default function Home() {
                 <span className="user">{post.usuario}</span>
                 <span className="edit">
                   <a href={`/post/${post.id}`}>
-                    <img src="/visibility-user.svg" alt="editar" />
+                    <img src="/visibility-user.svg" alt="visualizar post" />
                   </a>
                 </span>
               </li>
             ))}
           </Posts>
+          <PostMobile>
+          {loading ? <List uniqueKey="load-list1" /> : filteredPosts.map((post, idx) => (
+              <div className="post" key={post.id}>
+                <div className="post-description">
+                  <ul>
+                    <li>
+                      <img src={!post.thumbnail ? '/no-image.png': post.thumbnail} alt="photo" />
+                    </li>
+                    <li>{post.createdAtFormatted}</li>
+                  </ul>
+                  <ul className="last-ul">
+                    <li><strong>Descrição: </strong>{post.descricao}</li>
+                    <li><strong>Usuário: </strong>{post.usuario}</li>
+                    <li><strong>Ativo: </strong>{post.ativo ? 'Sim' : 'Não'}</li>
+                  </ul>
+                </div>
+                <div className="icon">
+                  <a href={`/post/${post.id}`}>
+                    <img src="/visibility-user.svg" alt="visualizar post" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </PostMobile>
         <ReactPaginate
           previousLabel="<"
           nextLabel=">"
@@ -135,7 +164,7 @@ export default function Home() {
           breakClassName="break-me"
           pageCount={totalPages}
           marginPagesDisplayed={1}
-          pageRangeDisplayed={8}
+          pageRangeDisplayed={isMobile ? 3 : 8}
           onPageChange={handlePageChange}
           containerClassName="pagination"
           activeClassName="pagination-active"

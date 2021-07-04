@@ -15,6 +15,14 @@ export const Title = styled.h2`
   text-align: center;
   color: var(--main-color);
   line-height: 2.5rem;
+
+  @media (max-width: 480px) {
+    font-size: 1.3rem;
+    
+    .hidden {
+      display: none;
+    }
+  }
 `;
 
 export const BoxLoading = styled.section`
@@ -60,6 +68,17 @@ export const BoxInfo = styled.section`
         color: var(--white);
       }
 
+    }
+  }
+
+  @media (max-width: 781px) {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    a {
+      width: 20rem;
+      height: 7rem;
     }
   }
 `;

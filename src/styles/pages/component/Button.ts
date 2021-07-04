@@ -23,5 +23,19 @@ export const Container = styled.div<ContainerProps>`
     &:hover {
       filter: brightness(0.95)
     }
+
+    img {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @media (max-width: 781px) {
+    button {
+      flex-direction: column;
+      width: 6rem;
+      height: 6rem;
+      justify-content: center;
+    }
   }
 `

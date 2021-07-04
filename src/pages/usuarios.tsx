@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { GetServerSideProps } from 'next';
 import { parseCookies } from 'nookies';
-import { format, parseISO } from 'date-fns';
-import ReactPaginate from 'react-paginate';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { List } from 'react-content-loader'
+import ReactPaginate from 'react-paginate';
+import { format, parseISO } from 'date-fns';
+import { Api } from '@/services/Api';
+import { useIsMobile } from '@/utils/IsMobile';
 
 import Header from '@/components/Header';
-import { Api } from '@/services/Api';
-import { Container, Users, Search } from '@/styles/pages/Users';
+import { Container, Users, Search, UsersMobile } from '@/styles/pages/Users';
 
 interface User {
   id: string;
@@ -39,9 +42,10 @@ export default function Home() {
   const [count, setCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
-  
+  const isMobile = useIsMobile();
+
   const filteredUsers = useMemo(
-    () => users.filter(u => 
+    () => users.filter(u =>
       search.length === 0
       || u.name.toLowerCase().includes(search.toLowerCase())
       || u.login.toLowerCase().includes(search.toLowerCase())
@@ -94,40 +98,64 @@ export default function Home() {
     <>
       <Header />
       <Container>
-        {/* <Search>
+        <Search>
           <input
             type="text"
             placeholder="Pesquisar"
             value={search}
             onChange={event => setSearch(event.target.value)}
           />
-        </Search> */}
-          <Users>
-            <li>
-              <span className="name">Nome</span>
-              <span className="login">Login</span>
-              <span className="email">E-mail</span>
-              <span className="date">Cadastro</span>
-              <span className="active">Ativo</span>
-              <span className="type">Tipo</span>
-              <span className="type">Visualizar</span>
+          <button className="buttonMobile" type="button">
+            <img src="/search.svg" alt="Botão de pesquisar" />
+          </button>
+        </Search>
+        <Users>
+          <li>
+            <span className="name">Nome</span>
+            <span className="login">Login</span>
+            <span className="email">E-mail</span>
+            <span className="date">Cadastro</span>
+            <span className="active">Ativo</span>
+            <span className="type">Tipo</span>
+            <span className="type">Visualizar</span>
+          </li>
+          {loading ? <List uniqueKey="load-list" /> : filteredUsers.map((user, idx) => (
+            <li key={idx.toString()}>
+              <span className="name">{user.name}</span>
+              <span className="login">{user.login}</span>
+              <span className="email">{user.email}</span>
+              <span className="date">{user.createdAtFormatted}</span>
+              <span className="active">{user.deleted ? 'Não' : 'Sim'}</span>
+              <span className="type">{user.userType}</span>
+              <span className="edit">
+                <a href={`/usuario/${user.id}`}>
+                  <img src="/visibility-user.svg" alt="editar" />
+                </a>
+              </span>
             </li>
-            {loading ? <List /> : filteredUsers.map((user, idx) => (
-              <li key={idx.toString()}>
-                <span className="name">{user.name}</span>
-                <span className="login">{user.login}</span>
-                <span className="email">{user.email}</span>
-                <span className="date">{user.createdAtFormatted}</span>
-                <span className="active">{user.deleted ? 'Não' : 'Sim'}</span>
-                <span className="type">{user.userType}</span>
-                <span className="edit">
+          ))}
+        </Users>
+        <UsersMobile>
+          {loading ? <List /> : filteredUsers.map((user, idx) => (
+            <div key={user.id}>
+              <ul>
+                <li><strong>Nome:</strong> {user.name}</li>
+                <li><strong>Login:</strong> {user.login}</li>
+                <li><strong>E-mail:</strong> {user.email}</li>
+                <li><strong>Tipo:</strong> {user.userType}</li>
+              </ul>
+              <ul className="right-ul">
+                <li>{user.createdAtFormatted}</li>
+                <li><strong>Ativo:</strong> {user.deleted ? 'Não' : 'Sim'}</li>
+                <li>
                   <a href={`/usuario/${user.id}`}>
-                    <img src="/visibility-user.svg" alt="editar" />
+                    <img src="/visibility-user.svg" alt="visualizar usuário" />
                   </a>
-                </span>
-              </li>
-            ))}
-          </Users>
+                </li>
+              </ul>
+            </div>
+          ))}
+        </UsersMobile>
         <ReactPaginate
           previousLabel="<"
           nextLabel=">"
@@ -136,11 +164,12 @@ export default function Home() {
           breakClassName="break-me"
           pageCount={totalPages}
           marginPagesDisplayed={1}
-          pageRangeDisplayed={8}
+          pageRangeDisplayed={isMobile ? 3 : 8}
           onPageChange={handlePageChange}
           containerClassName="pagination"
           activeClassName="pagination-active"
         />
+
       </Container>
     </>
   )

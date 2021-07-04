@@ -53,7 +53,7 @@ export default function Home() {
       <Header />
       <Container>
         <Title>
-          Bem vindo {user?.appUser}.<br />
+          <span className="hidden">Bem vindo {user?.appUser}.</span><br />
           Atividades nos últimos {data?.dias || 30} dias
         </Title>
         {data ? (

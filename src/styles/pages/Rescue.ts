@@ -4,6 +4,9 @@ export const Container = styled.div`
   max-width: 950px;
   margin: 0 auto;
   padding: 0 2rem;
+  height: calc(100vh - 64px);
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
 
   p {
     text-align: center;
@@ -13,7 +16,18 @@ export const Container = styled.div`
 
 export const TransferDetailContainer = styled.section`
   display: flex;
-  padding: 0 3rem;
+  flex-direction: column;
+
+  .list {
+    display: flex;
+    padding: 0 3rem;
+  }
+
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
 
   ul {
     flex: 1;
@@ -21,21 +35,38 @@ export const TransferDetailContainer = styled.section`
     
     li {
       text-align: left;
-
-      & + li {
-        margin-top: 0.8rem;
-      }
+      margin-top: 0.8rem;
     }
+  }
+
+  @media (max-width: 781px) {
+    flex-direction: column;
+    padding: 0;
   }
 `;
 
 export const FinanceSection = styled.div`
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
+
+  .line-card {
+    display: flex;
+  }
+
+  @media (max-width: 781px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: center;
+    row-gap: 1.6rem;
+    column-gap: 0;
+
+    .line-card {
+      display: block;
+    }
+  }
 `
 
 export const Rescues = styled.ul`
-  padding-top: 20px;
   max-height: calc(100% - 60px);
   overflow-y: auto;
 
@@ -67,6 +98,23 @@ export const Rescues = styled.ul`
 
     span.value, span.request, span.transfer {
       text-align: center;
+    }
+  }
+
+  @media (max-width: 781px) {
+
+    .header-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .transfer, .notes {
+      display: none;
     }
   }
 `;

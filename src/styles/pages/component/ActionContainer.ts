@@ -23,4 +23,11 @@ export const Container = styled.div<ContainerProps>`
     width: 3rem;
     height: 3rem;
   }
+
+  @media (max-width: 781px) {
+    span {
+      display: inline-block;
+      margin-top: 1rem;
+    }
+  }
 `
